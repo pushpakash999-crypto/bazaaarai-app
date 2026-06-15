@@ -562,7 +562,7 @@
 </div>
 
 <script>
-  const ANTHROPIC_API_KEY ="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"; // apni API key yahan daalo
+  const GEMINI_API_KEY = "YOUR_GEMINI_KEY_HERE"; // Gemini API key yahan daalo
 
   const products = [
     { id:1, name:"Wireless Earbuds", price:1299, emoji:"🎧", rating:4.5, reviews:128, category:"Electronics" },
@@ -806,7 +806,7 @@
 
     const prompt = `You are an AI shopping assistant for BazaarAI, an Indian e-commerce app.
 The user's cart currently has: ${cartNames}.
-Available products: ${products.map(p => `ID:${p.id} ${p.name} (₹${p.price}, ${p.category})`).join(", ")}.
+Available products: ${products.map(p => `ID:${p.id} ${p.name} (Rs.${p.price}, ${p.category})`).join(", ")}.
 
 Recommend exactly 3 products from the available list. Consider cart contents and pick complementary or popular items.
 Respond ONLY with a raw JSON array, no markdown, no backticks:
@@ -814,25 +814,22 @@ Respond ONLY with a raw JSON array, no markdown, no backticks:
 Use only product IDs: ${products.map(p => p.id).join(", ")}`;
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true"
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 1000,
-          messages: [{ role: "user", content: prompt }]
-        })
-      });
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.7, maxOutputTokens: 500 }
+          })
+        }
+      );
 
       if (!res.ok) throw new Error("API error: " + res.status);
 
       const data = await res.json();
-      const text = data.content.map(i => i.text || "").join("");
+      const text = data.candidates[0].content.parts[0].text;
       const clean = text.replace(/```json|```/g, "").trim();
       const recs = JSON.parse(clean);
 
@@ -845,7 +842,7 @@ Use only product IDs: ${products.map(p => p.id).join(", ")}`;
           <div class="rec-emoji">${p.emoji}</div>
           <div class="rec-name">${p.name}</div>
           <div class="rec-reason">${r.reason}</div>
-          <div class="rec-price">₹${p.price.toLocaleString('en-IN')}</div>
+          <div class="rec-price">&#8377;${p.price.toLocaleString('en-IN')}</div>
           ${inCart.includes(p.id)
             ? `<button class="ai-add-btn" onclick="showTab('cart')"><i class="ti ti-check"></i> Cart mein hai</button>`
             : `<button class="ai-add-btn" onclick="addToCart(${p.id}); setTimeout(getAIRecs, 300)">Cart mein add karo</button>`}
